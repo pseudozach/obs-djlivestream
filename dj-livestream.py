@@ -155,6 +155,10 @@ def script_defaults(settings):
 	obs.obs_data_set_default_string(settings, "animation_one", os.path.dirname(__file__) + "/images/bitcoin.gif")
 	obs.obs_data_set_default_string(settings, "animation_two", os.path.dirname(__file__) + "/images/rocket.gif")
 
+	# clear initial data
+	write_private_data("", "private1")
+	write_private_data("", "private2")
+
 def script_properties():
 	props = obs.obs_properties_create()
 
@@ -192,7 +196,7 @@ def create_text_source(lastcomment):
 		obs.obs_source_release(newsource)
 		obs.obs_data_release(settings)
 	else:
-		# print("djlscomment already exists setting the text")
+		print("djlscomment already exists setting the text")
 		settings = obs.obs_data_create()
 		obs.obs_data_set_string(settings, "text", lastcomment)
 		obs.obs_source_update(source, settings)
