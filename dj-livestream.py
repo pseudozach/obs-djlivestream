@@ -29,8 +29,6 @@ def update_text():
 		print("invoicekey is required")
 		return
 
-	# source = obs.obs_get_source_by_name(source_name)
-	# if source is not None:
 	try:
 		livestreamurl = url + "/livestream/api/v1/livestream"
 		req = Request(livestreamurl)
@@ -43,9 +41,6 @@ def update_text():
 		data = json.loads(text)
 
 		settings = obs.obs_data_create()
-		# set text to text source - original method
-		# obs.obs_data_set_string(settings, "text", data['lnurl'])
-
 		lnurlqrfilelocation = os.path.dirname(__file__) + "/lnurlqr.png"
 
 		# Instead of using qrcode library use this with https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Example
@@ -55,7 +50,7 @@ def update_text():
 		with open(lnurlqrfilelocation, 'wb') as output:
 			output.write(qrfile)
 
-		# set image to image source - new method for DJ Livestream via qrcode library
+		# set image to image source - old method for DJ Livestream via qrcode library
 		# img = qrcode.make(data['lnurl'])
 		# img.save(lnurlqrfilelocation)
 		# # print("img created at " + lnurlqrfilelocation)
@@ -79,8 +74,6 @@ def update_text():
 	except urllib.error.URLError as err:
 		obs.script_log(obs.LOG_WARNING, "Error opening URL '" + url + "': " + err.reason)
 		obs.remove_current_callback()
-
-	# obs.obs_source_release(source)
 
 # fetch latest comment from lnbits 
 def update_comment():
@@ -111,8 +104,8 @@ def update_comment():
 		for invoice in invoices:
 			if invoice["amount"] > 0 and invoice["pending"] == False and invoice["extra"] and invoice["extra"]["comment"] and len(invoice["extra"]["comment"]) > 0:
 				print("found an incoming invoice with comment: " + invoice["extra"]["comment"])
-				lastcomment = invoice["extra"]["comment"]
-				if invoice["amount"] > tip_threshold:
+				lastcomment = str(int(invoice["amount"]/1000)) + " sats\n" + invoice["extra"]["comment"]
+				if invoice["amount"]/1000 > tip_threshold:
 					animationtoshow = animation_two
 				break
 
@@ -121,18 +114,6 @@ def update_comment():
 
 		print("setting tip animation to " + animationtoshow)
 		show_image_source(animationtoshow)
-
-		# settings = obs.obs_data_create()
-		# set text to text source - original method
-		# obs.obs_data_set_string(settings, "text", lastcomment)
-
-		# update existing source
-		# source = obs.obs_get_source_by_name("djlscomment")
-		# obs.obs_source_update(source, settings)
-		# obs.obs_data_release(settings)
-		# obs.obs_source_release(source)
-
-		# check tip amount and show standard of large tip animation
 
 	except urllib.error.URLError as err:
 		obs.script_log(obs.LOG_WARNING, "Error opening URL '" + url + "': " + err.reason)
@@ -165,9 +146,6 @@ def script_update(settings):
 	tip_threshold  = obs.obs_data_get_int(settings, "tipthreshold")
 
 	obs.timer_remove(update_comment)
-	# no need to keep writing the QR code as it does not change!
-	# if url != "" and source_name != "":
-	# print("starting timer to update lnurl-pay comments every " + str(interval) + " seconds")
 	obs.timer_add(update_comment, interval * 1000)
 
 def script_defaults(settings):
@@ -186,19 +164,6 @@ def script_properties():
 	obs.obs_properties_add_text(props, "animationone", "Regular Tip Animation File Location", obs.OBS_TEXT_DEFAULT)
 	obs.obs_properties_add_int(props, "tipthreshold", "Large Tip Threshold (sats)", 1, 1000000, 1)
 	obs.obs_properties_add_text(props, "animationtwo", "Large Tip Animation File Location", obs.OBS_TEXT_DEFAULT)
-	
-	# p = obs.obs_properties_add_list(props, "source", "Text Source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
-	# sources = obs.obs_enum_sources()
-	# print("init sources length " + str(len(sources)))
-	# if sources is not None:
-	# 	for source in sources:
-	# 		source_id = obs.obs_source_get_unversioned_id(source)
-	# 		# if source_id == "text_gdiplus" or source_id == "text_ft2_source":
-	# 		if source_id == "image_source":
-	# 			name = obs.obs_source_get_name(source)
-	# 			obs.obs_property_list_add_string(p, name, name)
-
-	# 	obs.source_list_release(sources)
 
 	obs.obs_properties_add_button(props, "button", "Add to Scene", refresh_pressed)
 	return props
@@ -209,13 +174,7 @@ def create_text_source(lastcomment):
 		print("same comment so don't do anything")
 		return
 
-	# sources = obs.obs_enum_sources()
-	# print("create_text_source sources length " + str(len(sources)))
-
-	# if sources is not None:
 	source = obs.obs_get_source_by_name("djlscomment")
-	# print("djlscomment source exists? " + str(source))
-	# print(source)
 	if source is None:
 		print("djlscomment source does not exist so create it")
 		current_scene = obs.obs_frontend_get_current_scene()
@@ -242,29 +201,6 @@ def create_text_source(lastcomment):
 		
 	write_private_data(lastcomment, "private1")
 
-	# obs.source_list_release(sources)
-
-	# obs is insane - thinks a source exists even when removed.
-	# djlssource = obs.obs_get_source_by_name("djlscomment")
-	# print("by_name " + str(djlssource))
-	# if djlssource is None:
-	# 	print("djlscomment does NOT exist")
-	# else:
-	# 	print("djlscomment EXISTS")
-
-	# for source in sources:
-	# 	print("1sources loop ")
-	# 	print(source)
-	# 	source_id = obs.obs_source_get_unversioned_id(source)
-	# 	print("2sources loop " + source_id)
-	# 	name = obs.obs_source_get_name(source)
-	# 	print("3sources loop " + name)
-
-		# if source_id == "text_gdiplus" or source_id == "text_ft2_source":
-		# 	name = obs.obs_source_get_name(source)
-		# 	print("sources loop " + name)
-		# 	# obs.obs_property_list_add_string(p, name, name)
-
 def show_image_source(animationtoshow):
 	if animationtoshow == "":
 		print("no animation file to show")
@@ -276,11 +212,7 @@ def show_image_source(animationtoshow):
 		return
 
 	source_name = "djlsanimation"
-
-	# if sources is not None:
 	source = obs.obs_get_source_by_name(source_name)
-	# print("djlscomment source exists? " + str(source))
-	# print(source)
 	if source is None:
 		print(source_name + " source does not exist so create it")
 		current_scene = obs.obs_frontend_get_current_scene()
@@ -317,7 +249,6 @@ def send_to_private_data(data_type, field, result):
 
 def write_private_data(datatowrite, field):
     result = datatowrite
-	# "__private1__"
     send_to_private_data("string", field, result)
 
 @contextmanager
